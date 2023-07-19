@@ -1,0 +1,260 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Data Center Dashboard</title>
+    <style>
+        /* CSS styling for the dashboard layout */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .server-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .server-card {
+            flex: 1 1 300px;
+            padding: 20px;
+            background-color: #f4f4f4;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .Storage-all {
+            flex: 0 1 100%;
+            padding: 20px;
+            background-color: #1c8cb07e;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .chart-container {
+            width: 300px;
+            height: 300px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        h1 {
+            text-align: center;
+        }
+    </style>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Data Center Dashboard</h1>
+    <div class="server-container">
+        <div class="server-card">
+            <h2>Inrow 1</h2>
+            <p>CPU Usage: {{ server1Cpu }}%</p>
+            <p>Memory Usage: {{ server1Memory }}%</p>
+            <p>Number of VMs: {{ numVMs1}}</p>
+            <p>Number of Hosted Items: {{ numHostedItems1 }}</p>
+            <div class="chart-container">
+                <canvas id="storageChart1"></canvas>
+            </div>
+        </div>
+        <div class="server-card">
+            <h2>Inrow 2</h2>
+            <p>CPU Usage: {{ server2Cpu }}%</p>
+            <p>Memory Usage: {{ server2Memory }}%</p>
+            <p>Number of VMs: {{ numVMs2}}</p>
+            <p>Number of Hosted Items: {{ numHostedItems2 }}</p>
+            <div class="chart-container">
+                <canvas id="storageChart2"></canvas>
+            </div>
+        </div>
+        <div class="server-card">
+            <h2>Inrow 3</h2>
+            <p>CPU Usage: {{ server3Cpu }}%</p>
+            <p>Memory Usage: {{ server3Memory }}%</p>
+            <p>Number of VMs: {{ numVMs3}}</p>
+            <p>Number of Hosted Items: {{ numHostedItems3 }}</p>
+            <div class="chart-container">
+                <canvas id="storageChart3"></canvas>
+            </div>
+        </div>
+        <div class="server-card">
+            <h2>Inrow 4</h2>
+            <p>CPU Usage: {{ server4Cpu }}%</p>
+            <p>Memory Usage: {{ server4Memory }}%</p>
+            <p>Number of VMs: {{ numVMs4}}</p>
+            <p>Number of Hosted Items: {{ numHostedItems4 }}</p>
+            <div class="chart-container">
+                <canvas id="storageChart4"></canvas>
+            </div>
+        </div>
+        <div class="Storage-all">
+            <h2>Storage All</h2>
+            <div class="chart-container">
+                <canvas id="storageChart5"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+
+        function refreshPage() {
+            location.reload();
+        }
+        const refreshInterval = 5000;
+
+        // JavaScript code for initializing and updating the storage charts
+        document.addEventListener("DOMContentLoaded", function () {
+            // Function to fetch server data from the API
+            function fetchData(url, elementId) {
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', url, true);
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === 4 && xhr.status === 200) {
+                        var data = JSON.parse(xhr.responseText);
+                        var element = document.getElementById(elementId);
+                        if (element) {
+                            element.textContent = data.value;
+                        }
+                    }
+                };
+                xhr.send();
+            }
+
+            // Fetch and update CPU and memory values
+            fetchData('http://localhost:3000/api/cpu/1', 'server1Cpu');
+            fetchData('http://localhost:3000/api/memory/1', 'server1Memory');
+            fetchData('http://localhost:3000/api/cpu/2', 'server2Cpu');
+            fetchData('http://localhost:3000/api/memory/2', 'server2Memory');
+            fetchData('http://localhost:3000/api/cpu/3', 'server3Cpu');
+            fetchData('http://localhost:3000/api/memory/3', 'server3Memory');
+            fetchData('http://localhost:3000/api/cpu/4', 'server4Cpu');
+            fetchData('http://localhost:3000/api/memory/4', 'server4Memory');
+            fetchData('http://localhost:3000/api/vms/1', 'numVMs1');
+            fetchData('http://localhost:3000/api/hosted-items/1', 'numHostedItems1');
+            fetchData('http://localhost:3000/api/vms/2', 'numVMs2');
+            fetchData('http://localhost:3000/api/hosted-items/2', 'numHostedItems2');
+            fetchData('http://localhost:3000/api/vms/3', 'numVMs3');
+            fetchData('http://localhost:3000/api/hosted-items/3', 'numHostedItems3');
+            fetchData('http://localhost:3000/api/vms/4', 'numVMs4');
+            fetchData('http://localhost:3000/api/hosted-items/4', 'numHostedItems4');
+
+            // Dummy data for storage utilization (change with your own data)
+            const storageData1 = [
+                { label: "Used", value: 70, color: "#FF6384" },
+                { label: "Free", value: 30, color: "#36A2EB" },
+            ];
+
+            const storageData2 = [
+                { label: "Used", value: 20, color: "#FF6384" },
+                { label: "Free", value: 80, color: "#36A2EB" },
+            ];
+
+            const storageData3 = [
+                { label: "Used", value: 10, color: "#FF6384" },
+                { label: "Free", value: 90, color: "#36A2EB" },
+            ];
+
+            const storageData4 = [
+                { label: "Used", value: 90, color: "#FF6384" },
+                { label: "Free", value: 10, color: "#36A2EB" },
+            ];
+
+            const storageData5 = [
+                { label: "Used", value: 38, color: "#FF6384" },
+                { label: "Free", value: 62, color: "#36A2EB" },
+            ];
+
+            // Create pie charts for storage utilization
+            const storageChart1 = new Chart(document.getElementById("storageChart1"), {
+                type: "pie",
+                data: {
+                    datasets: [
+                        {
+                            data: storageData1.map((item) => item.value),
+                            backgroundColor: storageData1.map((item) => item.color),
+                        },
+                    ],
+                    labels: storageData1.map((item) => item.label),
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                },
+            });
+
+            const storageChart2 = new Chart(document.getElementById("storageChart2"), {
+                type: "pie",
+                data: {
+                    datasets: [
+                        {
+                            data: storageData2.map((item) => item.value),
+                            backgroundColor: storageData2.map((item) => item.color),
+                        },
+                    ],
+                    labels: storageData2.map((item) => item.label),
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                },
+            });
+
+            const storageChart3 = new Chart(document.getElementById("storageChart3"), {
+                type: "pie",
+                data: {
+                    datasets: [
+                        {
+                            data: storageData3.map((item) => item.value),
+                            backgroundColor: storageData3.map((item) => item.color),
+                        },
+                    ],
+                    labels: storageData3.map((item) => item.label),
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                },
+            });
+
+            const storageChart4 = new Chart(document.getElementById("storageChart4"), {
+                type: "pie",
+                data: {
+                    datasets: [
+                        {
+                            data: storageData4.map((item) => item.value),
+                            backgroundColor: storageData4.map((item) => item.color),
+                        },
+                    ],
+                    labels: storageData4.map((item) => item.label),
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                },
+            });
+
+            const storageChart5 = new Chart(document.getElementById("storageChart5"), {
+                type: "pie",
+                data: {
+                    datasets: [
+                        {
+                            data: storageData5.map((item) => item.value),
+                            backgroundColor: storageData5.map((item) => item.color),
+                        },
+                    ],
+                    labels: storageData5.map((item) => item.label),
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                },
+            });
+        });
+        setTimeout(refreshPage, refreshInterval);
+    </script>
+
+</body>
+</html>
